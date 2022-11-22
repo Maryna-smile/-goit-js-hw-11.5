@@ -19,7 +19,7 @@ fetchPhotos() {
         safesearch: true,
         page: this.page,
         key: this.#API_KEY
-    },
+    }
     };
     return axios.get(`${this.#BASE_URL}`, searchParams);
   }

@@ -3,22 +3,52 @@ import Notiflix from 'notiflix';
 import { PixabayApi } from './js/pixabay.js';
 import makeGalleryCard from './templates/galleryCard.hbs';
 import onInputChange from "./js/onInputChange.js";
-
-// ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 import SimpleLightbox from "simplelightbox";
 import "simplelightbox/dist/simple-lightbox.min.css";
-const lightbox = new SimpleLightbox('.gallery a', { CaptionDelay: 250 });
-// ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+const lightbox = new SimpleLightbox('.gallery a', { CaptionDelay: 250 });
 
 const searchFormRef = document.querySelector('.search-form');
 const galleryRef = document.querySelector('.gallery');
-const loadMoreBtnRef = document.querySelector('.load-more-btn');
-
+const scrollDiv = document.querySelector('.target-element');
 
 const inputCheckbox = document.querySelector(".checkbox");
 const body = document.querySelector("body");
 
+const observerOptions = {
+    root: null,
+    rootmargin: '0px 0px 300px 0px',
+    treshhold: 1
+}
+
+const observer = new IntersectionObserver(async entries => {
+    if (entries[0].isIntersecting) {
+        
+        try {
+            pixabayApi.page += 1;
+            const { data } = await pixabayApi.fetchPhotos();
+            galleryRef.insertAdjacentHTML('beforeend', makeGalleryCard(data.hits));
+            lightbox.refresh();
+
+            if (pixabayApi.page === Math.ceil(data.totalHits / pixabayApi.per_page)) {
+            }
+
+            observer.unobserve(scrollDiv);
+
+        } catch (err) {
+            console.log(err);
+        }
+
+        const { height: cardHeight } = document
+            .querySelector(".gallery")
+            .firstElementChild.getBoundingClientRect();
+
+        window.scrollBy({
+            top: cardHeight * 3,
+            behavior: "smooth",
+        });
+    };
+}, observerOptions);
 
 
 const pixabayApi = new PixabayApi();
@@ -34,7 +64,6 @@ const onSearchFormSubmit = async event => {
 
         if (!pixabayApi.searchQuery) {
             Notiflix.Notify.failure("Хоч щось потрібно ввести...");
-            loadMoreBtnRef.classList.add('is-hidden');
             return;
         }
 
@@ -42,7 +71,6 @@ const onSearchFormSubmit = async event => {
             Notiflix.Notify.failure("Ото запит!!! 😡 В нас таких картинок немає :((");
             event.target.elements.searchQuery.value = "";
             galleryRef.innerHTML = "";
-            loadMoreBtnRef.classList.add('is-hidden');
             return;
         }
 
@@ -54,44 +82,10 @@ const onSearchFormSubmit = async event => {
         Notiflix.Notify.info(`Урррра - є контакт, ми знайшли ${data.totalHits} фоточок :))`);
         galleryRef.innerHTML = makeGalleryCard(data.hits);
         lightbox.refresh();
-        loadMoreBtnRef.classList.remove('is-hidden');
-        loadMoreBtnRef.addEventListener('click', onLoadMoreBtnClick);
-
+        observer.observe(scrollDiv);
     } catch (err) {
         console.log(err);
     }
-};
-
-const onLoadMoreBtnClick = async event => {
-
-    try {
-        pixabayApi.page += 1;
-        const { data } = await pixabayApi.fetchPhotos();
-        galleryRef.insertAdjacentHTML('beforeend', makeGalleryCard(data.hits));
-        lightbox.refresh();
-
-        if ( pixabayApi.page === Math.ceil(data.totalHits / pixabayApi.per_page)) {
-            loadMoreBtnRef.classList.add('is-hidden');
-        }
-
-        if (data.totalHits === pixabayApi.page) {
-            Notiflix.Notify.info("Баста, карапузікі, кончіліся танци... 😪 більше картинок немає, це все");
-            loadMoreBtnRef.classList.add('is-hidden');
-        }
-
-    } catch (err) {
-        console.log(err);
-    }
-
-    const { height: cardHeight } = document
-        .querySelector(".gallery")
-        .firstElementChild.getBoundingClientRect();
-
-    window.scrollBy({
-        top: cardHeight * 3,
-        behavior: "smooth",
-    });
-
 };
 
 searchFormRef.addEventListener('submit', onSearchFormSubmit);
@@ -112,6 +106,5 @@ function checkTheme() {
 
 checkTheme();
 
-
-
+scrollDiv
 
