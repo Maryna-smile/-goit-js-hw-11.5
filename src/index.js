@@ -32,9 +32,10 @@ const observer = new IntersectionObserver(
             lightbox.refresh();
 
             if (pixabayApi.page === Math.ceil(data.totalHits / pixabayApi.per_page)) {
+                observer.unobserve(scrollDiv);
             }
 
-             observer.unobserve(scrollDiv);
+             
 
         } catch (err) {
             console.log(err);
