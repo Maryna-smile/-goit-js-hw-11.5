@@ -15,17 +15,18 @@ const scrollDiv = document.querySelector('.target-element');
 const inputCheckbox = document.querySelector(".checkbox");
 const body = document.querySelector("body");
 
-const observerOptions = {
-    root: null,
-    rootmargin: '0px 0px 300px 0px',
-    treshhold: 1
-}
+// const observerOptions = {
+//     root: null,
+//     rootMargin: '0px 0px 500px 0px',
+//     threshold: 1
+// }
 
-const observer = new IntersectionObserver(async entries => {
+const observer = new IntersectionObserver(
+    async (entries, observer) => {
     if (entries[0].isIntersecting) {
-        
+        pixabayApi.page += 1;
+
         try {
-            pixabayApi.page += 1;
             const { data } = await pixabayApi.fetchPhotos();
             galleryRef.insertAdjacentHTML('beforeend', makeGalleryCard(data.hits));
             lightbox.refresh();
@@ -33,7 +34,7 @@ const observer = new IntersectionObserver(async entries => {
             if (pixabayApi.page === Math.ceil(data.totalHits / pixabayApi.per_page)) {
             }
 
-            observer.unobserve(scrollDiv);
+             observer.unobserve(scrollDiv);
 
         } catch (err) {
             console.log(err);
@@ -48,7 +49,11 @@ const observer = new IntersectionObserver(async entries => {
             behavior: "smooth",
         });
     };
-}, observerOptions);
+}, 
+{ 
+    root: null,
+    rootMargin: '0px 0px 500px 0px',
+    threshold: 1});
 
 
 const pixabayApi = new PixabayApi();
